@@ -1,12 +1,12 @@
 package = "kafka"
 version = "1.1.0-0"
 source = {
-    url = "git+https://github.com/tarantool/kafka.git",
-    branch = 'master',
+    url = "git+https://github.com/jfk9w-tnt/kafka.git",
+    branch = 'dev',
 }
 description = {
     summary = "Kafka library for Tarantool",
-    homepage = "https://github.com/tarantool/kafka",
+    homepage = "https://github.com/jfk9w-tnt/kafka",
     license = "Apache",
 }
 dependencies = {
