@@ -245,60 +245,28 @@ rebalance_callback(rd_kafka_t *consumer, rd_kafka_resp_err_t err, rd_kafka_topic
     {
         case RD_KAFKA_RESP_ERR__ASSIGN_PARTITIONS:
             msg = new_rebalance_assign_msg(partitions);
-            if (msg != NULL) {
-
-                pthread_mutex_lock(&msg->lock);
-
-                if (queue_push(event_queues->queues[REBALANCE_QUEUE], msg) == 0) {
-                    // waiting while main TX thread invokes rebalance callback
-                    pthread_cond_wait(&msg->sync, &msg->lock);
-                }
-
-                pthread_mutex_unlock(&msg->lock);
-
-                destroy_rebalance_msg(msg);
-            }
-            rd_kafka_assign(consumer, partitions);
             break;
 
         case RD_KAFKA_RESP_ERR__REVOKE_PARTITIONS:
-            rd_kafka_commit(consumer, partitions, 0); // sync commit
-
             msg = new_rebalance_revoke_msg(partitions);
-            if (msg != NULL) {
-
-                pthread_mutex_lock(&msg->lock);
-
-                if (queue_push(event_queues->queues[REBALANCE_QUEUE], msg) == 0) {
-                    // waiting while main TX thread invokes rebalance callback
-                    pthread_cond_wait(&msg->sync, &msg->lock);
-                }
-
-                pthread_mutex_unlock(&msg->lock);
-
-                destroy_rebalance_msg(msg);
-            }
-
-            rd_kafka_assign(consumer, NULL);
             break;
 
         default:
             msg = new_rebalance_error_msg(err);
-            if (msg != NULL) {
-
-                pthread_mutex_lock(&msg->lock);
-
-                if (queue_push(event_queues->queues[REBALANCE_QUEUE], msg) == 0) {
-                    // waiting while main TX thread invokes rebalance callback
-                    pthread_cond_wait(&msg->sync, &msg->lock);
-                }
-
-                pthread_mutex_unlock(&msg->lock);
-
-                destroy_rebalance_msg(msg);
-            }
-            rd_kafka_assign(consumer, NULL);
             break;
+    }
+
+    if (msg != NULL) {
+        pthread_mutex_lock(&msg->lock);
+
+        if (queue_push(event_queues->queues[REBALANCE_QUEUE], msg) == 0) {
+            // waiting while main TX thread invokes rebalance callback
+            pthread_cond_wait(&msg->sync, &msg->lock);
+        }
+
+        pthread_mutex_unlock(&msg->lock);
+
+        destroy_rebalance_msg(msg);
     }
 }
 

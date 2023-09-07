@@ -17,6 +17,8 @@
 LUA_API int __attribute__ ((visibility("default")))
 luaopen_kafka_tntkafka(lua_State *L) {
     static const struct luaL_Reg consumer_methods [] = {
+            {"assign", lua_consumer_assign},
+            {"commit", lua_consumer_commit},
             {"subscribe", lua_consumer_subscribe},
             {"unsubscribe", lua_consumer_unsubscribe},
             {"poll_msg", lua_consumer_poll_msg},

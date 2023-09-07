@@ -33,6 +33,12 @@ typedef struct {
 } consumer_t;
 
 int
+lua_consumer_assign(struct lua_State *L);
+
+int
+lua_consumer_commit(struct lua_State *L);
+
+int
 lua_consumer_subscribe(struct lua_State *L);
 
 int

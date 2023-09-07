@@ -195,6 +195,14 @@ local function get_timeout_from_options(options)
     return timeout_ms
 end
 
+function Consumer:assign(toppar)
+    return self._consumer:assign(toppar)
+end
+
+function Consumer:commit(toppar, async)
+    return self._consumer:commit(toppar, async)
+end
+
 function Consumer:subscribe(topics)
     return self._consumer:subscribe(topics)
 end

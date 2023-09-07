@@ -146,6 +146,114 @@ lua_check_consumer(struct lua_State *L, int index) {
 }
 
 int
+lua_consumer_assign(struct lua_State *L) {
+    const char *usage = "Usage: err = consumer:assign({[topic] = {1, 2, 3}}) or err = consumer:assign(nil)";
+    if (lua_gettop(L) != 2 || (!lua_istable(L, 2) && !lua_isnil(L, 2))) {
+        return luaL_error(L, usage);
+    }
+
+    rd_kafka_topic_partition_list_t *topics = NULL;
+    if (lua_istable(L, 2)) {
+        topics = rd_kafka_topic_partition_list_new(lua_objlen(L, 1));
+        lua_pushnil(L);                 // stack: -1 => nil; -2 => topic-partitions; -3 => consumer
+        while (lua_next(L, -2)) {       // stack: -1 => partitions; -2 => topic; -3 => topic-partitions; -4 => consumer
+            if (!(luaL_checkstring(L, -2))) {
+                rd_kafka_topic_partition_list_destroy(topics);
+                return luaL_error(L, usage);
+            }
+            
+            const char* topic = lua_tostring(L, -2);
+
+            if (!(lua_istable(L, -1))) {
+                rd_kafka_topic_partition_list_destroy(topics);
+                return luaL_error(L, usage);
+            }
+
+            lua_pushnil(L);             // stack: -1 => nil; -2 => partitions; -3 => topic; -4 => topic-partitions; -5 => consumer
+            while (lua_next(L, -2)) {   // stack: -1 => partition; -2 => partition key; -3 => partitions; -4 => topic; -5 => topic-partitions; -6 => consumer
+                if (!(luaL_checkinteger(L, -1))) {
+                    rd_kafka_topic_partition_list_destroy(topics);
+                    return luaL_error(L, usage);
+                }
+                
+                int32_t partition = lua_tointeger(L, -1);
+                rd_kafka_topic_partition_list_add(topics, topic, partition);
+                lua_pop(L, 1);          // stack: -1 => partition key; -2 => partitions; -3 => topic; -4 => topic-partitions; -5 => consumer
+            }                           // stack: -1 => partitions; -2 => topic; -3 => topic-partitions; -4 => consumer
+            
+            lua_pop(L, 1);              // stack: -1 => topic; -2 => topic-partitions; -3 => consumer
+        }                               // stack: -1 => topic-partitions; -2 => consumer
+    }
+
+    consumer_t *consumer = lua_check_consumer(L, 1);
+    if (consumer->topics != NULL) {
+        rd_kafka_topic_partition_list_destroy(consumer->topics);
+        consumer->topics = NULL;
+    }
+
+    consumer->topics = topics;
+    rd_kafka_resp_err_t err = rd_kafka_assign(consumer->rd_consumer, consumer->topics);
+    if (err) {
+        lua_pushstring(L, rd_kafka_err2str(err));
+        return 1;
+    }
+
+    return 0;
+}
+
+int
+lua_consumer_commit(struct lua_State *L) {
+    const char *usage = "Usage: err = consumer:commit({[topic] = {1, 2, 3}}, false) for sync commit or consumer:commit({[topic] = {1, 2, 3}}, true) for async commit";
+    if (lua_gettop(L) != 3 || (!lua_istable(L, 2) && !lua_isnil(L, 2)) || !lua_isboolean(L, 3)) {
+        return luaL_error(L, usage);
+    }
+
+    int async = lua_toboolean(L, 3);
+
+    rd_kafka_topic_partition_list_t *topics = NULL;
+    if (lua_istable(L, 2)) {
+        topics = rd_kafka_topic_partition_list_new(lua_objlen(L, 1));
+        lua_pushnil(L);                 // stack: -1 => nil; -2 => async; -3 => topic-partitions; -4 => consumer
+        while (lua_next(L, 2)) {        // stack: -1 => partitions; -2 => topic; -3 => async; -4 => topic-partitions; -5 => consumer
+            if (!(luaL_checkstring(L, -2))) {
+                rd_kafka_topic_partition_list_destroy(topics);
+                return luaL_error(L, usage);
+            }
+            
+            const char* topic = lua_tostring(L, -2);
+
+            if (!(lua_istable(L, -1))) {
+                rd_kafka_topic_partition_list_destroy(topics);
+                return luaL_error(L, usage);
+            }
+
+            lua_pushnil(L);             // stack: -1 => nil; -2 => partitions; -3 => topic; -4 => async; -5 => topic-partitions; -6 => consumer
+            while (lua_next(L, -2)) {   // stack: -1 => partition; -2 => partition key; -3 => partitions; -4 => topic; -5 => async; -6 => topic-partitions; -7 => consumer
+                if (!(luaL_checkinteger(L, -1))) {
+                    rd_kafka_topic_partition_list_destroy(topics);
+                    return luaL_error(L, usage);
+                }
+                
+                int32_t partition = lua_tointeger(L, -1);
+                rd_kafka_topic_partition_list_add(topics, topic, partition);
+                lua_pop(L, 1);          // stack: -1 => partition key; -2 => partitions; -3 => topic; -4 => async; -5 => topic-partitions; -6 => consumer
+            }                           // stack: -1 => partitions; -2 => topic; -3 => async; -4 => topic-partitions; -5 => consumer
+            
+            lua_pop(L, 1);              // stack: -1 => topic; -2 => async; -3 => topic-partitions; -4 => consumer
+        }                               // stack: -1 => async; -2 => topic-partitions; -3 => consumer
+    }
+
+    consumer_t *consumer = lua_check_consumer(L, 1);
+    rd_kafka_resp_err_t err = rd_kafka_commit(consumer->rd_consumer, topics, async);
+    if (err) {
+        lua_pushstring(L, rd_kafka_err2str(err));
+        return 1;
+    }
+
+    return 0;
+}
+
+int
 lua_consumer_subscribe(struct lua_State *L) {
     if (lua_gettop(L) != 2 || !lua_istable(L, 2))
         luaL_error(L, "Usage: err = consumer:subscribe({'topic'})");
