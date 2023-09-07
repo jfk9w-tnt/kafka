@@ -238,7 +238,7 @@ destroy_rebalance_msg(rebalance_msg_t *rebalance_msg) {
 }
 
 void
-rebalance_callback(rd_kafka_t *consumer, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *partitions, void *opaque) {
+rebalance_callback(rd_kafka_t *UNUSED(consumer), rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *partitions, void *opaque) {
     event_queues_t *event_queues = opaque;
     rebalance_msg_t *msg = NULL;
     switch (err)
