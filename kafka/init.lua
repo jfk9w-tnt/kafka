@@ -64,11 +64,16 @@ end
 function Consumer:_poll_msg()
     local msgs
     while true do
+        log.info("polling messages")
         msgs = self._consumer:poll_msg(100)
+        log.info("polled %d message", #msgs)
         if #msgs > 0 then
             for _, msg in ipairs(msgs) do
+                log.info("put next message to channel")
                 self._output_ch:put(msg)
             end
+
+            log.info("yielding")
             fiber.yield()
         else
             -- throttling poll
