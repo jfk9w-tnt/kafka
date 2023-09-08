@@ -161,10 +161,10 @@ function Consumer:close()
     end
 
     self._consumer:stop()
-    self._output_ch:close()
+    self._poll_msg_fiber:cancel()
 
     fiber.yield()
-    self._poll_msg_fiber:cancel()
+    self._output_ch:close()
     
     if self._poll_logs_fiber ~= nil then
         self._poll_logs_fiber:cancel()
