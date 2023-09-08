@@ -590,79 +590,18 @@ lua_consumer_seek_partitions(struct lua_State *L) {
     return 0;
 }
 
-static ssize_t
-wait_consumer_close(va_list args) {
-    rd_kafka_t *rd_consumer = va_arg(args, rd_kafka_t *);
-    rd_kafka_message_t *rd_msg = NULL;
-    rd_kafka_resp_err_t err = RD_KAFKA_RESP_ERR_NO_ERROR;
-    int errors_count = 0;
-
-    // cleanup consumer queue, because at other way close hangs forever
-    while (true) {
-        rd_msg = rd_kafka_consumer_poll(rd_consumer, 1000);
-        if (rd_msg != NULL) {
-            err = rd_msg->err;
-            rd_kafka_message_destroy(rd_msg);
-            if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-                errors_count++;
-                error_callback(rd_consumer, err, rd_kafka_err2str(err), rd_kafka_opaque(rd_consumer));
-                // most likely there is no connection to the broker,
-                // so this cycle will go on forever without this condition
-                if (errors_count == 5) {
-                    break;
-                }
-            } else {
-                errors_count = 0;
-            }
-        } else {
-            break;
-        }
-    }
-
-    err = rd_kafka_consumer_close(rd_consumer);
-    if (err != RD_KAFKA_RESP_ERR_NO_ERROR) {
-        error_callback(rd_consumer, err, rd_kafka_err2str(err), rd_kafka_opaque(rd_consumer));
-        return -1;
-    }
-
-    return 0;
-}
-
-static ssize_t
-wait_consumer_destroy(va_list args) {
-    rd_kafka_t *rd_kafka = va_arg(args, rd_kafka_t *);
-    // prevents hanging forever
-    rd_kafka_destroy_flags(rd_kafka, RD_KAFKA_DESTROY_F_NO_CONSUMER_CLOSE);
-    return 0;
-}
-
-static void
-consumer_destroy(struct lua_State *L, consumer_t *consumer) {
-    if (consumer->rd_consumer != NULL) {
-        stop_consumer_poller(consumer->poller);
-    }
-
-    if (consumer->topics != NULL) {
-        rd_kafka_topic_partition_list_destroy(consumer->topics);
-        consumer->topics = NULL;
-    }
-
-    /*
-     * Here we close consumer and only then destroys other stuff.
-     * Otherwise raise condition is possible when e.g.
-     * event queue is destroyed but consumer still receives logs, errors, etc.
-     * Only topics should be destroyed.
-     */
-    if (consumer->rd_consumer != NULL) {
-        /* Destroy handle */
-        // FIXME: kafka_destroy hangs forever
-        coio_call(wait_consumer_destroy, consumer->rd_consumer);
-        consumer->rd_consumer = NULL;
-    }
-
+int
+lua_consumer_close(struct lua_State *L) {
+    consumer_t *consumer = lua_check_consumer(L, 1);
     if (consumer->poller != NULL) {
+        stop_consumer_poller(consumer->poller);
         destroy_consumer_poller(consumer->poller);
         consumer->poller = NULL;
+    }
+
+    if (consumer->rd_consumer != NULL) {
+        rd_kafka_destroy(consumer->rd_consumer);
+        consumer->rd_consumer = NULL;
     }
 
     if (consumer->event_queues != NULL) {
@@ -670,35 +609,11 @@ consumer_destroy(struct lua_State *L, consumer_t *consumer) {
         consumer->event_queues = NULL;
     }
 
-    free(consumer);
-}
-
-int
-lua_consumer_close(struct lua_State *L) {
-    consumer_t **consumer_p = (consumer_t **)luaL_checkudata(L, 1, consumer_label);
-    if (consumer_p == NULL || *consumer_p == NULL) {
-        lua_pushboolean(L, 0);
-        return 1;
+    if (consumer->topics != NULL) {
+        rd_kafka_topic_partition_list_destroy(consumer->topics);
+        consumer->topics = NULL;
     }
 
-    // unsubscribe consumer to make possible close it
-    rd_kafka_unsubscribe((*consumer_p)->rd_consumer);
-    rd_kafka_commit((*consumer_p)->rd_consumer, NULL, 0); // sync commit of current offsets
-
-    // trying to close in background until success
-    coio_call(wait_consumer_close, (*consumer_p)->rd_consumer);
-    lua_pushboolean(L, 1);
-    return 1;
-}
-
-int
-lua_consumer_destroy(struct lua_State *L) {
-    consumer_t **consumer_p = (consumer_t **)luaL_checkudata(L, 1, consumer_label);
-    if (consumer_p && *consumer_p) {
-        consumer_destroy(L, *consumer_p);
-    }
-    if (consumer_p)
-        *consumer_p = NULL;
     return 0;
 }
 

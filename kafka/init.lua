@@ -160,12 +160,8 @@ function Consumer:close()
         return false
     end
 
-    local ok = self._consumer:close()
-
     self._poll_msg_fiber:cancel()
     self._output_ch:close()
-
-    fiber.yield()
 
     if self._poll_logs_fiber ~= nil then
         self._poll_logs_fiber:cancel()
@@ -180,10 +176,10 @@ function Consumer:close()
         self._poll_rebalances_fiber:cancel()
     end
 
-    self._consumer:destroy()
+    fiber.yield()
 
+    local ok = self._consumer:close()
     self._consumer = nil
-
     return ok
 end
 

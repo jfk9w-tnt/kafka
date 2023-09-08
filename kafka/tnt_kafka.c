@@ -34,7 +34,6 @@ luaopen_kafka_tntkafka(lua_State *L) {
             {"pause", lua_consumer_pause},
             {"resume", lua_consumer_resume},
             {"close", lua_consumer_close},
-            {"destroy", lua_consumer_destroy},
             {"__tostring", lua_consumer_tostring},
             {NULL, NULL}
     };

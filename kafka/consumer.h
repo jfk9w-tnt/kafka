@@ -72,9 +72,6 @@ int
 lua_consumer_close(struct lua_State *L);
 
 int
-lua_consumer_destroy(struct lua_State *L);
-
-int
 lua_create_consumer(struct lua_State *L);
 
 int
