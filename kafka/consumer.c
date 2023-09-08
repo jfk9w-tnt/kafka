@@ -591,7 +591,7 @@ lua_consumer_seek_partitions(struct lua_State *L) {
 }
 
 int
-lua_consumer_close(struct lua_State *L) {
+lua_consumer_stop(struct lua_State *L) {
     consumer_t *consumer = lua_check_consumer(L, 1);
     if (consumer->poller != NULL) {
         stop_consumer_poller(consumer->poller);
@@ -599,6 +599,12 @@ lua_consumer_close(struct lua_State *L) {
         consumer->poller = NULL;
     }
 
+    return 0;
+}
+
+int
+lua_consumer_close(struct lua_State *L) {
+    consumer_t *consumer = lua_check_consumer(L, 1);
     if (consumer->rd_consumer != NULL) {
         rd_kafka_destroy(consumer->rd_consumer);
         consumer->rd_consumer = NULL;

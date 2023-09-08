@@ -69,6 +69,9 @@ int
 lua_consumer_seek_partitions(struct lua_State *L);
 
 int
+lua_consumer_stop(struct lua_State *L);
+
+int
 lua_consumer_close(struct lua_State *L);
 
 int

@@ -33,6 +33,7 @@ luaopen_kafka_tntkafka(lua_State *L) {
             {"list_groups", lua_consumer_list_groups},
             {"pause", lua_consumer_pause},
             {"resume", lua_consumer_resume},
+            {"stop", lua_consumer_stop},
             {"close", lua_consumer_close},
             {"__tostring", lua_consumer_tostring},
             {NULL, NULL}
