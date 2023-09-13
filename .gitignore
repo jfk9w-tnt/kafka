@@ -1,6 +1,6 @@
-.idea
+.idea/
 .vscode/
-.rocks
+.rocks/
 tests/venv
 tests/.pytest_cache
 tests/__*
@@ -9,3 +9,4 @@ build.luarocks/
 build/
 **/CMakeCache.txt
 *.cmake
+Makefile
