@@ -2,7 +2,7 @@ package = "kafka"
 version = "scm-1"
 source = {
     url = "git+https://github.com/jfk9w-tnt/kafka.git",
-    branch = 'dev',
+    branch = 'refactor',
 }
 description = {
     summary = "Kafka library for Tarantool",

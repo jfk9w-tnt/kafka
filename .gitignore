@@ -6,3 +6,6 @@ tests/.pytest_cache
 tests/__*
 cmake-build-debug
 build.luarocks/
+build/
+**/CMakeCache.txt
+*.cmake

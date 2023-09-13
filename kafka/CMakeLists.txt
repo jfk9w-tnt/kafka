@@ -1,7 +1,7 @@
 include_directories(${RDKAFKA_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(tntkafka SHARED tnt_kafka.c callbacks.c consumer.c consumer_msg.c producer.c queue.c common.c)
+add_library(kafka SHARED common.c consumer_message.c consumer.c kafka.c)
 
 if (APPLE)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} \
@@ -9,11 +9,10 @@ if (APPLE)
 endif(APPLE)
 
 find_package(Threads REQUIRED)
-target_link_libraries(tntkafka ${CMAKE_THREAD_LIBS_INIT})
-set_target_properties(tntkafka PROPERTIES C_VISIBILITY_PRESET hidden)
+target_link_libraries(kafka ${CMAKE_THREAD_LIBS_INIT})
+set_target_properties(kafka PROPERTIES C_VISIBILITY_PRESET hidden)
 
-target_link_libraries(tntkafka ${RDKAFKA_LIBRARY})
-set_target_properties(tntkafka PROPERTIES PREFIX "" OUTPUT_NAME "tntkafka")
+target_link_libraries(kafka ${RDKAFKA_LIBRARY})
+set_target_properties(kafka PROPERTIES PREFIX "" OUTPUT_NAME "kafka")
 
-install(TARGETS tntkafka LIBRARY DESTINATION ${TARANTOOL_INSTALL_LIBDIR}/kafka)
-install(FILES init.lua version.lua DESTINATION ${TARANTOOL_INSTALL_LUADIR}/kafka)
+install(TARGETS kafka LIBRARY DESTINATION ${TARANTOOL_INSTALL_LIBDIR})

@@ -1,95 +1,25 @@
-#ifndef TNT_KAFKA_CONSUMER_H
-#define TNT_KAFKA_CONSUMER_H
-
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-
-#include <librdkafka/rdkafka.h>
+#ifndef KAFKA_CONSUMER_H
+#define KAFKA_CONSUMER_H
 
 #include <common.h>
-#include <queue.h>
-#include <callbacks.h>
-#include <consumer_msg.h>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * Consumer
- */
+#include <consumer_message.h>
 
 typedef struct {
-    rd_kafka_t      *rd_consumer;
-    pthread_t       thread;
-    pthread_attr_t  attr;
-    int             should_stop;
-    pthread_mutex_t lock;
-} consumer_poller_t;
-
-typedef struct {
-    rd_kafka_t                      *rd_consumer;
-    rd_kafka_topic_partition_list_t *topics;
-    event_queues_t                  *event_queues;
-    consumer_poller_t               *poller;
+    rd_kafka_t *rd_kafka;
 } consumer_t;
 
-int
-lua_consumer_assign(struct lua_State *L);
+#define LUA_CREATE_CONSUMER_USAGE "usage: consumer, err = create_consumer(conf)"
+#define LUA_CREATE_CONSUMER_ARG_CONF 1
+int lua_create_consumer(lua_State *L);
 
-int
-lua_consumer_commit(struct lua_State *L);
+#define LUA_CONSUMER_ASSIGN_USAGE "usage: err = consumer:assign(x), where x one of: {{topic, partition, offset}}, {{topic, partition}}, or nil"
+#define LUA_CONSUMER_ASSIGN_ARG_TP LUA_ARG_SELF + 1
+int lua_consumer_assign(lua_State *L);
 
-int
-lua_consumer_subscribe(struct lua_State *L);
+#define LUA_CONSUMER_POLL_USAGE "usage: msg = consumer:poll(timeout_ms)"
+#define LUA_CONSUMER_POLL_ARG_TIMEOUT LUA_ARG_SELF + 1
+int lua_consumer_poll(lua_State *L);
 
-int
-lua_consumer_unsubscribe(struct lua_State *L);
+int lua_consumer_destroy(lua_State *L);
 
-int
-lua_consumer_tostring(struct lua_State *L);
-
-int
-lua_consumer_poll_msg(struct lua_State *L);
-
-int
-lua_consumer_poll_logs(struct lua_State *L);
-
-int
-lua_consumer_poll_stats(struct lua_State *L);
-
-int
-lua_consumer_poll_errors(struct lua_State *L);
-
-int
-lua_consumer_poll_rebalances(struct lua_State *L);
-
-int
-lua_consumer_store_offset(struct lua_State *L);
-
-int
-lua_consumer_seek_partitions(struct lua_State *L);
-
-int
-lua_consumer_stop(struct lua_State *L);
-
-int
-lua_consumer_close(struct lua_State *L);
-
-int
-lua_create_consumer(struct lua_State *L);
-
-int
-lua_consumer_dump_conf(struct lua_State *L);
-
-int
-lua_consumer_metadata(struct lua_State *L);
-
-int
-lua_consumer_list_groups(struct lua_State *L);
-
-int
-lua_consumer_pause(struct lua_State *L);
-
-int
-lua_consumer_resume(struct lua_State *L);
-
-#endif //TNT_KAFKA_CONSUMER_H
+#endif  // KAFKA_CONSUMER_H
